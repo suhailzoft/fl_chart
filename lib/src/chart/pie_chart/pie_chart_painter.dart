@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:fl_chart/src/chart/base/base_chart/base_chart_painter.dart';
+import 'package:fl_chart/src/utils/canvas_wrapper.dart';
 import 'package:fl_chart/src/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -61,11 +62,13 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
       return;
     }
 
+    final canvasWrapper = CanvasWrapper(canvas, size);
+
     final List<double> sectionsAngle = _calculateSectionsAngle(data.sections, data.sumValue);
 
-    _drawCenterSpace(canvas, size);
-    _drawSections(canvas, size, sectionsAngle);
-    _calculateOverlays(canvas, size);
+    _drawCenterSpace(canvasWrapper);
+    _drawSections(canvasWrapper, sectionsAngle);
+    _calculateOverlays(canvasWrapper);
   }
 
   List<double> _calculateSectionsAngle(List<PieChartSectionData> sections, double sumValue) {
@@ -74,18 +77,21 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
     }).toList();
   }
 
-  void _drawCenterSpace(Canvas canvas, Size viewSize) {
+  void _drawCenterSpace(CanvasWrapper canvasWrapper) {
+    final viewSize = canvasWrapper.size;
     final double centerX = viewSize.width / 2;
     final double centerY = viewSize.height / 2;
 
-    canvas.drawCircle(Offset(centerX, centerY), data.centerSpaceRadius, _centerSpacePaint);
+    canvasWrapper.drawCircle(Offset(centerX, centerY), data.centerSpaceRadius, _centerSpacePaint);
   }
 
-  void _drawSections(Canvas canvas, Size viewSize, List<double> sectionsAngle) {
+  void _drawSections(CanvasWrapper canvasWrapper, List<double> sectionsAngle) {
     final shouldDrawSeparators = data.sectionsSpace != 0 && data.sections.length != 1;
 
+    final viewSize = canvasWrapper.size;
+
     if (shouldDrawSeparators) {
-      canvas.saveLayer(Rect.fromLTWH(0, 0, viewSize.width, viewSize.height), Paint());
+      canvasWrapper.saveLayer(Rect.fromLTWH(0, 0, viewSize.width, viewSize.height), Paint());
     }
 
     final Offset center = Offset(viewSize.width / 2, viewSize.height / 2);
@@ -106,7 +112,7 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
 
       final double startAngle = tempAngle;
       final double sweepAngle = sectionDegree;
-      canvas.drawArc(
+      canvasWrapper.drawArc(
         rect,
         radians(startAngle),
         radians(sweepAngle),
@@ -118,13 +124,14 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
     }
 
     if (shouldDrawSeparators) {
-      _removeSectionsSpace(canvas, viewSize);
+      _removeSectionsSpace(canvasWrapper);
     }
   }
 
   /// firstly the sections draw close to eachOther without any space,
   /// then here we clear a line with given [PieChartData.width]
-  void _removeSectionsSpace(Canvas canvas, Size viewSize) {
+  void _removeSectionsSpace(CanvasWrapper canvasWrapper) {
+    final viewSize = canvasWrapper.size;
     const double extraLineSize = 1;
     final Offset center = Offset(viewSize.width / 2, viewSize.height / 2);
 
@@ -159,16 +166,17 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
           );
 
       _sectionsSpaceClearPaint.strokeWidth = data.sectionsSpace;
-      canvas.drawLine(sectionsStartFrom, sectionsStartTo, _sectionsSpaceClearPaint);
+      canvasWrapper.drawLine(sectionsStartFrom, sectionsStartTo, _sectionsSpaceClearPaint);
       tempAngle += sweepAngle;
     });
-    canvas.restore();
+    canvasWrapper.restore();
   }
 
   /// Calculates layout of overlaying elements, includes:
   /// - title text
   /// - badge widget positions
-  void _calculateOverlays(Canvas canvas, Size viewSize) {
+  void _calculateOverlays(CanvasWrapper canvasWrapper) {
+    final viewSize = canvasWrapper.size;
     final Offset center = Offset(viewSize.width / 2, viewSize.height / 2);
     final Map<int, Offset> badgeWidgetsOffsets = <int, Offset>{};
 
@@ -207,7 +215,7 @@ class PieChartPainter extends BaseChartPainter<PieChartData> with TouchHandler<P
             textScaleFactor: textScale);
 
         tp.layout();
-        tp.paint(canvas, sectionCenterOffsetTitle - Offset(tp.width / 2, tp.height / 2));
+        canvasWrapper.drawText(tp, sectionCenterOffsetTitle - Offset(tp.width / 2, tp.height / 2));
       }
 
       if (section.badgeWidget != null) {
