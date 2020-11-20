@@ -89,7 +89,8 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         final LineTouchResponse response = _touchHandler?.handleTouch(
             FlPanEnd(Offset.zero, const Velocity(pixelsPerSecond: Offset.zero)), chartSize);
         if (_canHandleTouch(response, touchData)) {
-          touchData.touchCallback(response);
+           // stop auto-hidden a Tooltip
+          // touchData.touchCallback(response);
         }
       },
       onPanEnd: (DragEndDetails details) {
@@ -101,9 +102,7 @@ class _LineChartState extends AnimatedWidgetBaseState<LineChart> {
         final LineTouchResponse response =
             _touchHandler?.handleTouch(FlPanEnd(Offset.zero, details.velocity), chartSize);
         if (_canHandleTouch(response, touchData)) {
-          //  touchData.touchCallback(response);
-          // stop auto-hidden a Tooltip
-          // touchData.touchCallback(response);
+            touchData.touchCallback(response);
         }
       },
       onPanDown: (DragDownDetails details) {
